@@ -183,7 +183,7 @@ function fmt(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; 
 function tick() {
   waterSec--; quoteSec--;
   if (waterSec <= 0) { waterAlert(); waterSec = 3600; }
-  if (quoteSec <= 0) { showQuote(); quoteSec = 20; }
+  if (quoteSec <= 0) { showQuote(); quoteSec = 600; }
   document.getElementById("water-countdown").textContent = fmt(waterSec);
   document.getElementById("quote-countdown").textContent = fmt(quoteSec);
 }
@@ -197,3 +197,4 @@ setInterval(tick, 1000);
 </script>
 </body>
 </html>
+>
