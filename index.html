@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hydration Reminder & Motivational Quotes</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+  .card { background: #1e293b; border-radius: 1rem; padding: 2rem; max-width: 480px; width: 100%; text-align: center; margin-bottom: 1.5rem; }
+  h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #38bdf8; }
+  #quote { font-size: 1.15rem; line-height: 1.8; min-height: 4rem; transition: opacity .4s; font-style: italic; }
+  #quote-zh { font-size: 1rem; line-height: 1.6; color: #94a3b8; margin-top: .5rem; transition: opacity .4s; }
+  #water-reminder { font-size: 1.1rem; padding: 1.5rem; animation: none; }
+  #water-reminder.active { animation: pulse 1s ease-in-out 3; background: #164e63; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  .timer { margin-top: 1rem; font-size: .85rem; color: #64748b; }
+  .emoji { font-size: 2rem; margin-bottom: .5rem; }
+  #source { font-size: .7rem; color: #334155; margin-top: .3rem; letter-spacing: .05em; }
+  #notif-btn { margin-top: 1rem; padding: .5rem 1.2rem; border: 1px solid #334155; background: transparent; color: #94a3b8; border-radius: .5rem; cursor: pointer; font-size: .85rem; }
+  #notif-btn:hover { background: #334155; }
+</style>
+</head>
+<body>
+
+<div class="card" id="water-reminder">
+  <div class="emoji">💧🚻</div>
+  <div>Next hydration reminder in <strong id="water-countdown">60:00</strong></div>
+</div>
+
+<div class="card">
+  <h1>✨ Daily Motivation ✨</h1>
+  <div id="quote">Loading...</div>
+  <div id="quote-zh"></div>
+  <div id="source"></div>
+  <div class="timer">Auto-refreshes every 20s · Next in <span id="quote-countdown">0:20</span></div>
+</div>
+
+<button id="notif-btn" onclick="requestNotif()">🔔 Enable Desktop Notifications</button>
+
+<script>
+const quotes = [
+  {en:"The only way to do great work is to love what you do. — Steve Jobs",zh:"成就伟大事业的唯一途径，是热爱你所做的事。——乔布斯"},
+  {en:"It does not matter how slowly you go as long as you do not stop. — Confucius",zh:"不怕慢，就怕站。——孔子"},
+  {en:"Believe you can and you're halfway there. — Theodore Roosevelt",zh:"相信你能，你就已经成功了一半。——罗斯福"},
+  {en:"The future belongs to those who believe in the beauty of their dreams. — Eleanor Roosevelt",zh:"未来属于那些相信梦想之美的人。——埃莉诺·罗斯福"},
+  {en:"Success is not final, failure is not fatal: it is the courage to continue that counts. — Winston Churchill",zh:"成功非终点，失败非末日，唯有前行的勇气才最重要。——丘吉尔"},
+  {en:"In the middle of every difficulty lies opportunity. — Albert Einstein",zh:"每一个困难的中间，都蕴藏着机会。——爱因斯坦"},
+  {en:"The best time to plant a tree was 20 years ago. The second best time is now. — Chinese Proverb",zh:"种一棵树最好的时间是二十年前，其次是现在。——中国谚语"},
+  {en:"Your time is limited, don't waste it living someone else's life. — Steve Jobs",zh:"你的时间有限，不要浪费在过别人的生活上。——乔布斯"},
+  {en:"It always seems impossible until it's done. — Nelson Mandela",zh:"在事情做成之前，一切看起来都不可能。——曼德拉"},
+  {en:"Do what you can, with what you have, where you are. — Theodore Roosevelt",zh:"尽你所能，用你所有，在你所处。——罗斯福"},
+  {en:"Everything you've ever wanted is on the other side of fear. — George Addair",zh:"你想要的一切，都在恐惧的另一边。——阿代尔"},
+  {en:"Hardships often prepare ordinary people for an extraordinary destiny. — C.S. Lewis",zh:"磨难往往为平凡的人铺就非凡的命运。——C.S.刘易斯"},
+  {en:"The secret of getting ahead is getting started. — Mark Twain",zh:"领先的秘诀在于开始行动。——马克·吐温"},
+  {en:"Don't watch the clock; do what it does. Keep going. — Sam Levenson",zh:"别盯着时钟看，要像它一样不停前行。——莱文森"},
+  {en:"You are never too old to set another goal or to dream a new dream. — C.S. Lewis",zh:"你永远不会老到无法追寻新梦想。——C.S.刘易斯"},
+  {en:"Act as if what you do makes a difference. It does. — William James",zh:"行动起来，就当你做的事能改变世界——事实确实如此。——詹姆斯"},
+  {en:"What lies behind us and what lies before us are tiny matters compared to what lies within us. — Ralph Waldo Emerson",zh:"身后与眼前之事，皆不及内心之力。——爱默生"},
+  {en:"The mind is everything. What you think you become. — Buddha",zh:"心即一切，你的所思决定你的所成。——佛陀"},
+  {en:"Strive not to be a success, but rather to be of value. — Albert Einstein",zh:"不要追求成功，而要追求有价值。——爱因斯坦"},
+  {en:"I have not failed. I've just found 10,000 ways that won't work. — Thomas Edison",zh:"我没有失败，只是发现了一万种行不通的方法。——爱迪生"},
+  {en:"Great things never come from comfort zones.",zh:"伟大的事物从不诞生于舒适区。"},
+  {en:"The way to get started is to quit talking and begin doing. — Walt Disney",zh:"开始的最好方式，就是停止空谈，动手去做。——迪士尼"},
+  {en:"Opportunities don't happen. You create them. — Chris Grosser",zh:"机会不会从天而降，要靠自己创造。——格罗瑟"},
+  {en:"I find that the harder I work, the more luck I seem to have. — Thomas Jefferson",zh:"我发现我越努力，就越幸运。——杰斐逊"},
+  {en:"The ones who are crazy enough to think they can change the world are the ones who do. — Steve Jobs",zh:"那些疯狂到认为自己能改变世界的人，才是真正改变世界的人。——乔布斯"},
+  {en:"Do one thing every day that scares you. — Eleanor Roosevelt",zh:"每天做一件让你害怕的事。——埃莉诺·罗斯福"},
+  {en:"We may encounter many defeats but we must not be defeated. — Maya Angelou",zh:"我们可能遭遇许多挫败，但绝不能被打败。——安吉罗"},
+  {en:"Whether you think you can or you think you can't, you're right. — Henry Ford",zh:"无论你认为自己行还是不行，你都是对的。——福特"},
+  {en:"Life is 10% what happens to us and 90% how we react to it. — Charles R. Swindoll",zh:"生活10%是际遇，90%是你的态度。——斯温多尔"},
+  {en:"The best revenge is massive success. — Frank Sinatra",zh:"最好的报复就是巨大的成功。——辛纳屈"},
+  {en:"Fall seven times, stand up eight. — Japanese Proverb",zh:"七次跌倒，八次站起。——日本谚语"},
+  {en:"Courage is not the absence of fear, but the triumph over it. — Nelson Mandela",zh:"勇气不是没有恐惧，而是战胜恐惧。——曼德拉"},
+  {en:"You miss 100% of the shots you don't take. — Wayne Gretzky",zh:"你不出手，就百分之百不会命中。——格雷茨基"},
+  {en:"A journey of a thousand miles begins with a single step. — Lao Tzu",zh:"千里之行，始于足下。——老子"},
+  {en:"Go confidently in the direction of your dreams. — Henry David Thoreau",zh:"自信地朝着梦想的方向前进。——梭罗"},
+  {en:"There is no substitute for hard work. — Thomas Edison",zh:"勤奋没有替代品。——爱迪生"},
+  {en:"Don't let yesterday take up too much of today. — Will Rogers",zh:"别让昨天占据了今天太多的时间。——罗杰斯"},
+  {en:"You don't have to be great to start, but you have to start to be great. — Zig Ziglar",zh:"你不必很优秀才能开始，但你必须开始才能变得优秀。——齐格勒"},
+  {en:"Start where you are. Use what you have. Do what you can. — Arthur Ashe",zh:"从你所在的地方开始，用你所有的，做你能做的。——阿什"},
+  {en:"Our greatest glory is not in never falling, but in rising every time we fall. — Confucius",zh:"最大的荣耀不在于从不跌倒，而在于每次跌倒后都能站起来。——孔子"},
+  {en:"Be the change that you wish to see in the world. — Mahatma Gandhi",zh:"欲变世界，先变其身。——甘地"},
+  {en:"Turn your wounds into wisdom. — Oprah Winfrey",zh:"把伤痛化为智慧。——奥普拉"},
+  {en:"He who has a why to live can bear almost any how. — Friedrich Nietzsche",zh:"知道为什么而活的人，便能承受任何一种生活。——尼采"},
+  {en:"If you can dream it, you can do it. — Walt Disney",zh:"如果你能梦想到，你就能做到。——迪士尼"},
+  {en:"Nothing is impossible, the word itself says 'I'm possible'! — Audrey Hepburn",zh:"没有什么不可能，这个词本身就在说「我能」！——赫本"},
+  {en:"Keep your face always toward the sunshine and shadows will fall behind you. — Walt Whitman",zh:"永远面朝阳光，阴影就会落在身后。——惠特曼"},
+  {en:"Happiness is not something ready-made. It comes from your own actions. — Dalai Lama",zh:"幸福不是现成的，它来自你自己的行动。——达赖喇嘛"},
+  {en:"Well done is better than well said. — Benjamin Franklin",zh:"做得好胜过说得好。——富兰克林"},
+  {en:"Don't count the days, make the days count. — Muhammad Ali",zh:"不要数日子，要让每一天都有意义。——阿里"},
+  {en:"Small daily improvements over time lead to stunning results. — Robin Sharma",zh:"每天一点小进步，日积月累成就惊人。——夏尔马"},
+  {en:"Discipline is the bridge between goals and accomplishment. — Jim Rohn",zh:"自律是目标与成就之间的桥梁。——吉姆·罗恩"},
+  {en:"Energy and persistence conquer all things. — Benjamin Franklin",zh:"精力与坚持可以征服一切。——富兰克林"},
+  {en:"The man who moves a mountain begins by carrying away small stones. — Confucius",zh:"移山之人，始于搬走小石头。——孔子"},
+  {en:"Success is walking from failure to failure with no loss of enthusiasm. — Winston Churchill",zh:"成功就是从失败走向失败，却热情不减。——丘吉尔"},
+  {en:"Tough times never last, but tough people do. — Robert H. Schuller",zh:"艰难时光终将过去，坚强的人会留下来。——舒勒"},
+  {en:"Don't wish it were easier. Wish you were better. — Jim Rohn",zh:"别希望事情更简单，要希望自己更强大。——吉姆·罗恩"},
+  {en:"Doubt kills more dreams than failure ever will. — Suzy Kassem",zh:"怀疑比失败扼杀了更多的梦想。——卡塞姆"},
+  {en:"Work hard in silence, let your success be your noise. — Frank Ocean",zh:"默默努力，让成功替你发声。——弗兰克·奥申"},
+  {en:"Be so good they can't ignore you. — Steve Martin",zh:"优秀到让人无法忽视你。——史蒂夫·马丁"},
+  {en:"Stay hungry, stay foolish. — Steve Jobs",zh:"求知若饥，虚心若愚。——乔布斯"},
+  {en:"The best way to predict the future is to create it. — Peter Drucker",zh:"预测未来的最好方式就是创造未来。——德鲁克"},
+  {en:"Innovation distinguishes between a leader and a follower. — Steve Jobs",zh:"创新是区分领导者和追随者的标志。——乔布斯"},
+  {en:"Think big, start small, act now. — Robin Sharma",zh:"想得大，从小做起，立刻行动。——夏尔马"},
+  {en:"Sometimes later becomes never. Do it now.",zh:"有时候「以后」就变成了「永远不」。现在就做。"},
+  {en:"Great things take time. Be patient.",zh:"伟大的事需要时间，请保持耐心。"},
+  {en:"Dream it. Wish it. Do it.",zh:"敢想，敢盼，敢做。"},
+  {en:"Stay positive. Work hard. Make it happen.",zh:"保持积极，努力工作，让它发生。"},
+  {en:"Don't wait for opportunity. Create it.",zh:"不要等待机会，去创造它。"},
+  {en:"Failure is simply the opportunity to begin again, this time more intelligently. — Henry Ford",zh:"失败只是重新开始的机会，这一次会更聪明。——福特"},
+  {en:"The expert in anything was once a beginner. — Helen Hayes",zh:"任何领域的专家，都曾是初学者。——海伦·海斯"},
+  {en:"Quality is not an act, it is a habit. — Aristotle",zh:"品质不是一种行为，而是一种习惯。——亚里士多德"},
+  {en:"We are what we repeatedly do. Excellence, then, is not an act, but a habit. — Aristotle",zh:"卓越不是一次行为，而是一种习惯。——亚里士多德"},
+  {en:"Impossible is just an opinion. — Paulo Coelho",zh:"不可能只是一种观点。——保罗·柯艾略"},
+  {en:"Life begins at the end of your comfort zone. — Neale Donald Walsch",zh:"生活从舒适区的边界开始。——沃尔什"},
+  {en:"The only thing we have to fear is fear itself. — Franklin D. Roosevelt",zh:"我们唯一需要恐惧的，就是恐惧本身。——罗斯福"},
+  {en:"Progress, not perfection.",zh:"追求进步，而非完美。"},
+  {en:"Stars can't shine without darkness.",zh:"没有黑暗，星星无法闪耀。"},
+  {en:"The comeback is always stronger than the setback.",zh:"东山再起，总比挫折更有力量。"},
+  {en:"Push yourself, because no one else is going to do it for you.",zh:"逼自己一把，因为没有人会替你努力。"},
+];
+
+let shuffled = [], si = 0;
+function shuffle() {
+  shuffled = [...quotes];
+  for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+  si = 0;
+}
+shuffle();
+let waterSec = 3600, quoteSec = 20;
+
+async function translateToZh(text) {
+  try {
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw 0;
+    const data = await res.json();
+    return data.responseData.translatedText;
+  } catch { return ""; }
+}
+
+async function showQuote() {
+  const el = document.getElementById("quote");
+  const elZh = document.getElementById("quote-zh");
+  const src = document.getElementById("source");
+  let en, zh, from;
+  try {
+    const res = await fetch("https://dummyjson.com/quotes/random", { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw 0;
+    const data = await res.json();
+    en = `${data.quote} — ${data.author}`;
+    zh = await translateToZh(data.quote);
+    from = "via dummyjson.com API";
+  } catch {
+    if (si >= shuffled.length) shuffle();
+    const q = shuffled[si++];
+    en = q.en; zh = q.zh;
+    from = "via built-in quotes";
+  }
+  el.style.opacity = 0; elZh.style.opacity = 0; src.style.opacity = 0;
+  setTimeout(() => {
+    el.textContent = en;
+    elZh.textContent = zh;
+    src.textContent = from;
+    el.style.opacity = 1; elZh.style.opacity = 1; src.style.opacity = 1;
+  }, 400);
+}
+
+function notify(title, body) {
+  if (Notification.permission === "granted") new Notification(title, { body });
+}
+
+function waterAlert() {
+  const el = document.getElementById("water-reminder");
+  el.classList.remove("active");
+  void el.offsetWidth;
+  el.classList.add("active");
+  notify("💧 Hydration Reminder", "Time to drink water and take a break!");
+}
+
+function fmt(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+
+function tick() {
+  waterSec--; quoteSec--;
+  if (waterSec <= 0) { waterAlert(); waterSec = 3600; }
+  if (quoteSec <= 0) { showQuote(); quoteSec = 20; }
+  document.getElementById("water-countdown").textContent = fmt(waterSec);
+  document.getElementById("quote-countdown").textContent = fmt(quoteSec);
+}
+
+function requestNotif() {
+  if ("Notification" in window) Notification.requestPermission();
+}
+
+showQuote();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
